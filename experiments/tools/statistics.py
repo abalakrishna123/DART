@@ -20,15 +20,38 @@ def eval_agent_statistics_cont(env, agent, sup, T, num_samples=1):
     # compute the mean and sem on averaged losses.
     return stats(losses)
 
-# TODO
-def evaluate_variance(env, agent, sup, T, num_samples=1):
-    pass
 
+def evaluate_bias_variance(env, agent, sup, T, num_samples=1):
+    s = env.reset()
+    biases = []
+    variances = []
 
-# TODO
-def evaluate_bias(env, agent, sup, T, num_samples=1):
-    pass
+    for i in range(num_samples):
+        bias, variance, t = 0, 0, 0
+        while t < T:
+            a = agent.sample_action(s) # \E_D(\pi^D_\theta(s))
+            a_sup = sup.intended_action(s) # \pi^*(s)
+            # For variance, at each state sample actions from a random model and compare
+            # to that from expected model
+            a_ensemble_list = agent.intended_actions(s)
+            ensemble_idx = np.random.randint(len(a_ensemble_list))
+            a_ensemble = a_ensemble_list[ensemble_idx] # \pi^D_\theta(s)
 
+            next_s, r, done, _ = env.step(a)
+            s = next_s
+            bias += (a - a_sup)**2
+            variance += (a - a_ensemble)**2
+            t += 1
+
+            if done == True:
+                break
+
+        bias /= float(t)
+        variance /= float(t)
+        biases.append(bias)
+        variances.append(variance)
+            
+    return biases, variances
 
 
 def eval_sup_statistics_cont(env, agent, sup, T, num_samples=1):
@@ -110,7 +133,6 @@ def evaluate_sup_cont(env, agent, sup, T, num_samples = 1):
 def evaluate_sim_err_cont(env, sup, T, num_samples = 1):
     stats = eval_sim_err_statistics_cont(env, sup, T, num_samples)
     return stats['mean']
-
 
 def collect_traj(env, agent, T, visualize=False):
     """
