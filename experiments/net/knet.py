@@ -84,7 +84,7 @@ class Network:
         return 1.0 - loss/res
 
     def construct(self, n, d):
-        backend.clear_session()
+        # backend.clear_session()
         model = Sequential()
         last_shape = (n,)
         for i in range(len(self.arch)):

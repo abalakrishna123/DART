@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
+import tensorflow as tf
 """
     sup should have two methods: intended_action() and sample_action()
     which return the intended action and the potentially noisy action respectively.
@@ -7,11 +8,12 @@ from sklearn.model_selection import train_test_split
 
 class Learner():
 
-    def __init__(self, est, sup=None):
+    def __init__(self, est, bootstrap_ratio=1, sup=None):
         self.X = []
         self.y = []
         self.est = est
-        self.one_class_error = None
+        self.N = len(self.est)
+        self.bootstrap_ratio = bootstrap_ratio
 
     def add_data(self, states, actions):
         assert type(states) == list
@@ -24,31 +26,29 @@ class Learner():
         self.y = []
 
     def train(self, verbose=False):
-        # try:
-        if True:
-            # X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=0.15)
-            X_train, y_train = self.X, self.y
-            history = self.est.fit(X_train, y_train)
-            self.one_class_error = None
-            if verbose == True:
-                print "Train score: " + str(self.est.score(X_train, y_train))
-            return history
+        X_train, y_train = np.array(self.X), np.array(self.y)
 
-            # return self.est.score(X_test, y_test)
-        # except ValueError:
-            # self.one_class_error = self.y[0]
+        idxs = np.arange(len(X_train))
+        bootstrapped_idxs = [np.random.choice(idxs, size=int(self.bootstrap_ratio*len(X_train)), replace=True) for _ in range(self.N)]
+        X_train_bootstrapped = [X_train[bootstrapped_idxs[i]] for i in range(self.N)]
+        y_train_bootstrapped = [y_train[bootstrapped_idxs[i]] for i in range(self.N)]
+        histories = [self.est[i].fit(X_train_bootstrapped[i], y_train_bootstrapped[i]) for i in range(self.N)]
+
+        if verbose == True:
+            scores = [self.est[i].score(X_train_bootstrapped[i], y_train_bootstrapped[i]) for i in range(self.N)]
+            mean_score = np.mean(scores, axis=0)
+            var_score = np.var(scores, axis=0)
+            print "Train score mean: " + str(mean_score), " Train score var: " + str(var_score)
+        return histories
 
     def acc(self):
-        if self.one_class_error is not None:
-            predictions = np.ones(len(self.y)) * self.one_class_error
-            return np.mean((predictions == np.array(self.y)).astype(int))
-            
-        return self.est.score(self.X, self.y)
+        return np.mean([self.est[i].score(self.X, self.y) for i in range(self.N)], axis=0)
+
+    def intended_actions(self, s):
+        return [self.est[i].predict([s])[0] for i in range(self.N)]
 
     def intended_action(self, s):
-        if self.one_class_error is not None:
-            return self.one_class_error
-        return self.est.predict([s])[0]
+        return np.mean(self.intended_actions(s), axis=0)
 
     def sample_action(self, s):
         return self.intended_action(s)

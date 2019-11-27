@@ -20,6 +20,17 @@ def eval_agent_statistics_cont(env, agent, sup, T, num_samples=1):
     # compute the mean and sem on averaged losses.
     return stats(losses)
 
+# TODO
+def evaluate_variance(env, agent, sup, T, num_samples=1):
+    pass
+
+
+# TODO
+def evaluate_bias(env, agent, sup, T, num_samples=1):
+    pass
+
+
+
 def eval_sup_statistics_cont(env, agent, sup, T, num_samples=1):
     """
         Evaluate loss on the supervisor's trajectory in the given env

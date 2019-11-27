@@ -13,6 +13,8 @@ import scipy.stats
 
 
 TRIALS = 20
+ENSEMBLE_SIZE = 5
+BOOTSTRAP_RATIO = 0.5
 
 class Test(object):
 
@@ -24,8 +26,8 @@ class Test(object):
         """
             Initializes new neural network and learner wrapper
         """
-        est = knet.Network(params['arch'], learning_rate=params['lr'], epochs=params['epochs'])
-        lnr = learner.Learner(est)
+        est = [knet.Network(params['arch'], learning_rate=params['lr'], epochs=params['epochs']) for _ in range(ENSEMBLE_SIZE)]
+        lnr = learner.Learner(est, bootstrap_ratio=BOOTSTRAP_RATIO)
         return est, lnr
 
 
@@ -83,6 +85,7 @@ class Test(object):
         """
         # Asserting limited data per iteration. 
         # See experiments from Ho and Ermon, 2016 for sampling method
+
         print "Data: " + str(len(self.lnr.X))
         assert len(self.lnr.X) <= (self.params['iters'][-1] * 50)
         
