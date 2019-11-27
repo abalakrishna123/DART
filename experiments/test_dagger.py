@@ -26,6 +26,7 @@ def main():
     args['arch'] = [64, 64]
     args['lr'] = .01
     args['epochs'] = 100
+    args['mode'] = 'dagger'
 
     TRIALS = framework.TRIALS
 

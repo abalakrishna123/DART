@@ -136,9 +136,18 @@ class Test(object):
         results['surr_losses'] = statistics.evaluate_lnr_cont(self.env, self.lnr, self.sup, self.params['t'], 1)
         results['sup_losses'] = statistics.evaluate_sup_cont(self.env, self.lnr, self.sup, self.params['t'], 1)
         results['sim_errs'] = statistics.evaluate_sim_err_cont(self.env, self.sup, self.params['t'], 1)
-        biases, variances = statistics.evaluate_bias_variance(self.env, self.lnr, self.sup, self.params['t'], 20)
+
+        if self.params['mode'] == 'bc':
+            self.dist_gen = self.sup 
+        elif self.params['mode'] == 'dagger':
+            self.dist_gen = self.lnr
+        else:
+            raise ValueError("Unsupported mode")
+
+        biases, variances = statistics.evaluate_bias_variance_cont(self.env, self.lnr, self.sup, self.dist_gen, self.params['t'], 20)
         results['biases'] = biases 
         results['variances'] = variances
+        results['covariate_shift'] = statistics.evaluate_covariate_shift_cont(self.env, self.lnr, self.sup, self.dist_gen, self.params['t'], 20)
         return results
 
 
