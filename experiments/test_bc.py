@@ -52,6 +52,9 @@ class Test(framework.Test):
             'sup_losses': [],
             'sim_errs': [],
             'data_used': [],
+            'biases': [],
+            'variances': [],
+            'covariate_shifts': []
         }
 
         snapshots = []
@@ -77,6 +80,9 @@ class Test(framework.Test):
             results['surr_losses'].append(it_results['surr_loss_mean'])
             results['sup_losses'].append(it_results['sup_loss_mean'])
             results['sim_errs'].append(it_results['sim_err_mean'])
+            results['biases'].append(it_results['biases_mean'])
+            results['variances'].append(it_results['variances_mean'])
+            results['covariate_shifts'].append(it_results['covariate_shifts_mean'])
             results['data_used'].append(len(y))
 
 

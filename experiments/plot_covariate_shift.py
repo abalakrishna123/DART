@@ -51,10 +51,11 @@ def main():
     c = next(color)
 
     means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, color=c, linestyle='--')
+    # plt.plot(iters, means, color=c, linestyle='--')
 
-    ptype = 'surr_loss'
+    ptype = 'covariate_shifts'
     means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
+    means = np.abs(means)
     plt.plot(iters, means, label='Behavior Cloning', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
 
@@ -70,10 +71,11 @@ def main():
     c = next(color)
 
     means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, color=c, linestyle='--')
+    # plt.plot(iters, means, color=c, linestyle='--')
 
-    ptype = 'surr_loss'
+    ptype = 'covariate_shifts'
     means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
+    means = np.abs(means)
     plt.plot(iters, means, label='DAgger', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
     # try:
@@ -147,7 +149,7 @@ def main():
 
 
 
-    plt.title("Bias/Variance on " + str(params['envname']))
+    plt.title("Covariate Shift on " + str(params['envname']))
     plt.legend()
     plt.xticks(iters)
     plt.legend(loc='upper right')
@@ -157,7 +159,7 @@ def main():
         os.makedirs(save_path)
 
     if should_save == True:
-        plt.savefig(save_path + str(params['envname']) + "_bias_variance.pdf")
+        plt.savefig(save_path + str(params['envname']) + "_covariate_shift.pdf")
     else:
         plt.show()
 

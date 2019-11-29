@@ -21,7 +21,7 @@ def eval_agent_statistics_cont(env, agent, sup, T, num_samples=1):
     return stats(losses)
 
 
-def evaluate_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
+def eval_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
     s = env.reset()
     biases = []
     variances = []
@@ -41,8 +41,8 @@ def evaluate_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
             a_dist_gen = dist_gen.sample_action(s)
             next_s, r, done, _ = env.step(a_dist_gen) 
             s = next_s
-            bias += (a - a_sup)**2
-            variance += (a - a_ensemble)**2
+            bias += np.sum((a - a_sup)**2)
+            variance += np.sum((a - a_ensemble)**2)
             t += 1
 
             if done == True:
@@ -53,10 +53,10 @@ def evaluate_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
         biases.append(bias)
         variances.append(variance)
             
-    return biases, variances
+    return stats(biases), stats(variances)
 
 
-def evaluate_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
+def eval_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
     s = env.reset()
     learned_dist_losses = []
     dist_gen_param_losses = []
@@ -71,7 +71,7 @@ def evaluate_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
             # Evaluate losses on learner's distribution
             next_s, r, done, _ = env.step(a) 
             s = next_s
-            learner_loss += (a - a_sup)**2
+            learner_loss += np.sum((a - a_sup)**2)
             t += 1
 
             if done == True:
@@ -88,7 +88,7 @@ def evaluate_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
             # Evaluate losses on learner's distribution
             next_s, r, done, _ = env.step(a_dist_gen) 
             s = next_s
-            dist_gen_loss += (a - a_sup)**2
+            dist_gen_loss += np.sum((a - a_sup)**2)
             t += 1
 
             if done == True:
@@ -98,7 +98,7 @@ def evaluate_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
         dist_gen_param_losses.append(dist_gen_loss)
 
             
-    return np.array(learned_dist_losses) - np.array(dist_gen_param_losses)
+    return stats(np.array(learned_dist_losses) - np.array(dist_gen_param_losses))
 
 
 def eval_sup_statistics_cont(env, agent, sup, T, num_samples=1):
@@ -180,6 +180,15 @@ def evaluate_sup_cont(env, agent, sup, T, num_samples = 1):
 def evaluate_sim_err_cont(env, sup, T, num_samples = 1):
     stats = eval_sim_err_statistics_cont(env, sup, T, num_samples)
     return stats['mean']
+
+def evaluate_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
+    stats_bias, stats_variance = eval_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples)
+    return stats_bias['mean'], stats_variance['mean']
+
+def evaluate_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
+    stats = eval_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples)
+    return stats['mean']
+
 
 def collect_traj(env, agent, T, visualize=False):
     """

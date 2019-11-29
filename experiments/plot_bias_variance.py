@@ -44,7 +44,7 @@ def main():
     # Behavior Cloning loss on sup distr
     title = 'test_bc'
     params['mode'] = 'bc'
-    ptype = 'sup_loss'
+    ptype = 'biases'
     params_bc = params.copy()
     del params_bc['update']     # Updates are used in behavior cloning
 
@@ -53,7 +53,7 @@ def main():
     means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
     plt.plot(iters, means, color=c, linestyle='--')
 
-    ptype = 'surr_loss'
+    ptype = 'variances'
     means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
     plt.plot(iters, means, label='Behavior Cloning', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
@@ -63,7 +63,7 @@ def main():
     beta = .5
     title = 'test_dagger'
     params['mode'] = 'dagger'
-    ptype = 'sup_loss'
+    ptype = 'biases'
     params_dagger = params.copy()
     params_dagger['beta'] = .5      # You may adjust the prior to whatever you chose.
     del params_dagger['update']
@@ -72,7 +72,7 @@ def main():
     means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
     plt.plot(iters, means, color=c, linestyle='--')
 
-    ptype = 'surr_loss'
+    ptype = 'variances'
     means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
     plt.plot(iters, means, label='DAgger', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
