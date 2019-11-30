@@ -55,7 +55,7 @@ def main():
 
     ptype = 'covariate_shifts'
     means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
-    means = np.abs(means)
+    means = means
     plt.plot(iters, means, label='Behavior Cloning', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
 
@@ -75,7 +75,7 @@ def main():
 
     ptype = 'covariate_shifts'
     means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
-    means = np.abs(means)
+    means = means
     plt.plot(iters, means, label='DAgger', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
     # try:
