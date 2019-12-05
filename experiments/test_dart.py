@@ -24,9 +24,10 @@ def main():
     ap.add_argument('--partition', required=True, type=int)             # Integer between 1 and 450 (exclusive),
 
     args = vars(ap.parse_args())
-    args['arch'] = [64, 64]
+    args['arch'] = [64]
     args['lr'] = .01
     args['epochs'] = 100
+    args['mode'] = 'dart'
 
     TRIALS = framework.TRIALS
 
@@ -49,7 +50,7 @@ class Test(framework.Test):
         return count
 
 
-
+    # TODO: update to learn noise which minimizes variance + covariate shift...?
     def update_noise(self, i, trajs):
 
         if i in self.params['update']:
@@ -78,7 +79,11 @@ class Test(framework.Test):
             'sup_losses': [],
             'sim_errs': [],
             'data_used': [],
+            'biases': [],
+            'variances': [],
+            'covariate_shifts': []
         }
+
         trajs = []
         snapshots = []
         traj_snapshots = []
@@ -116,6 +121,9 @@ class Test(framework.Test):
             results['surr_losses'].append(it_results['surr_loss_mean'])
             results['sup_losses'].append(it_results['sup_loss_mean'])
             results['sim_errs'].append(it_results['sim_err_mean'])
+            results['biases'].append(it_results['biases_mean'])
+            results['variances'].append(it_results['variances_mean'])
+            results['covariate_shifts'].append(it_results['covariate_shifts_mean'])
             results['data_used'].append(len(y) + optimized_data)
             print "\nTrain data: " + str(len(y))
             print "\n Optimize data: " + str(optimized_data)

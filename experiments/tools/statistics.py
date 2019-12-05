@@ -21,10 +21,17 @@ def eval_agent_statistics_cont(env, agent, sup, T, num_samples=1):
     return stats(losses)
 
 
-def eval_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
+def eval_bias_variance_cont(env, agent, sup, mode, T, num_samples=1):
     s = env.reset()
     biases = []
     variances = []
+
+    if mode== 'bc':
+        dist_gen = sup 
+    elif mode == 'dagger':
+        dist_gen = agent
+    else:
+        dist_gen = None
 
     for i in range(num_samples):
         bias, variance, t = 0, 0, 0
@@ -38,7 +45,10 @@ def eval_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
             a_ensemble = a_ensemble_list[ensemble_idx] # \pi^D_\theta(s)
 
             # Need to evaluate bias/variance on distribution generating parameter
-            a_dist_gen = dist_gen.sample_action(s)
+            if dist_gen:
+                a_dist_gen = dist_gen.sample_action(s)
+            else:
+                a_dist_gen = sup.sample_action(s)
             next_s, r, done, _ = env.step(a_dist_gen) 
             s = next_s
             bias += np.sum((a - a_sup)**2)
@@ -56,10 +66,17 @@ def eval_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
     return stats(biases), stats(variances)
 
 
-def eval_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
+def eval_covariate_shift_cont(env, agent, sup, mode, T, num_samples=1):
     s = env.reset()
     learned_dist_losses = []
     dist_gen_param_losses = []
+
+    if mode== 'bc':
+        dist_gen = sup 
+    elif mode == 'dagger':
+        dist_gen = agent
+    else:
+        dist_gen = None
 
     for i in range(num_samples):
         learner_loss, dist_gen_loss = 0, 0
@@ -84,8 +101,11 @@ def eval_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
         while t < T:
             a = agent.sample_action(s)
             a_sup = sup.intended_action(s)
-            a_dist_gen = dist_gen.sample_action(s)
-            # Evaluate losses on learner's distribution
+            if dist_gen:
+                a_dist_gen = dist_gen.sample_action(s)
+            else:
+                a_dist_gen = sup.sample_action(s)
+            # Evaluate losses on dist gen's distribution
             next_s, r, done, _ = env.step(a_dist_gen) 
             s = next_s
             dist_gen_loss += np.sum((a - a_sup)**2)

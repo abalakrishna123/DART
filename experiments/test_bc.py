@@ -23,7 +23,8 @@ def main():
     ap.add_argument('--iters', required=True, type=int, nargs='+')      # iterations to evaluate the learner on
 
     args = vars(ap.parse_args())
-    args['arch'] = [64, 64]
+    # args['arch'] = [64, 64]
+    args['arch'] = [64]
     args['lr'] = .01
     args['epochs'] = 100
     args['mode'] = 'bc'

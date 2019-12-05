@@ -23,7 +23,8 @@ def main():
     ap.add_argument('--beta', required=True, type=float)                # beta term, see Ross et al.
     
     args = vars(ap.parse_args())
-    args['arch'] = [64, 64]
+    # args['arch'] = [64, 64]
+    args['arch'] = [64]
     args['lr'] = .01
     args['epochs'] = 100
     args['mode'] = 'dagger'

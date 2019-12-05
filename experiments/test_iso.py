@@ -22,9 +22,10 @@ def main():
     ap.add_argument('--scale', required=True, type=float)               # amount to scale the identity matrix
     
     args = vars(ap.parse_args())
-    args['arch'] = [64, 64]
+    args['arch'] = [64]
     args['lr'] = .01
     args['epochs'] = 100
+    args['mode'] = 'iso'
 
     TRIALS = framework.TRIALS
 
@@ -51,7 +52,11 @@ class Test(framework.Test):
             'sup_losses': [],
             'sim_errs': [],
             'data_used': [],
+            'biases': [],
+            'variances': [],
+            'covariate_shifts': []
         }
+
         trajs = []
 
         d = self.params['d']
@@ -84,6 +89,9 @@ class Test(framework.Test):
             results['surr_losses'].append(it_results['surr_loss_mean'])
             results['sup_losses'].append(it_results['sup_loss_mean'])
             results['sim_errs'].append(it_results['sim_err_mean'])
+            results['biases'].append(it_results['biases_mean'])
+            results['variances'].append(it_results['variances_mean'])
+            results['covariate_shifts'].append(it_results['covariate_shifts_mean'])
             results['data_used'].append(len(y))
 
 

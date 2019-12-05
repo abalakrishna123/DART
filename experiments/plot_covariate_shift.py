@@ -13,7 +13,7 @@ import scipy.stats
 from tools import statistics, utils
 import itertools
 marker = itertools.cycle((',', '+', '.', 'o', '*', 's')) 
-color = itertools.cycle(( "#FCB716", "#2D3956", "#A0B2D8", "#988ED5", "#F68B20"))
+color = itertools.cycle(( "#FCB716", "#2D3956", "#A0B2D8", "#988ED5", "#F68B20", "#15d134"))
 
 
 
@@ -30,7 +30,7 @@ def main():
     ap.add_argument('--save', action='store_true', default=False)
     
     params = vars(ap.parse_args())
-    params['arch'] = [64, 64]
+    params['arch'] = [64]
     params['lr'] = .01
     params['epochs'] = 100
 
@@ -55,7 +55,7 @@ def main():
 
     ptype = 'covariate_shifts'
     means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
-    means = means
+    means = abs(means)
     plt.plot(iters, means, label='Behavior Cloning', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
 
@@ -75,7 +75,7 @@ def main():
 
     ptype = 'covariate_shifts'
     means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
-    means = means
+    means = abs(means)
     plt.plot(iters, means, label='DAgger', color=c)
     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
     # try:
@@ -109,43 +109,83 @@ def main():
     #     pass
 
 
-    # # Isotropic noise
-    # title = 'test_iso'
-    # ptype = 'sup_loss'
-    # params_iso = params.copy()
-    # params_iso['scale'] = 1.0
-    # del params_iso['update']
-    # c = next(color)
-    # try:
-    #     means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, color=c, linestyle='--')
+    # Isotropic noise
+    title = 'test_iso'
+    params['mode'] = 'iso'
+    ptype = 'sup_loss'
+    params_iso = params.copy()
+    params_iso['scale'] = 1.0
+    del params_iso['update']
+    c = next(color)
+    try:
+        means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
+        # plt.plot(iters, means, color=c, linestyle='--')
+        ptype = 'covariate_shifts'                
+        means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
+        means = abs(means)
+        plt.plot(iters, means, label='Isotropic Noise 1.0', color=c)
+        plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    except IOError:
+        pass
 
-    #     ptype = 'surr_loss'
-    #     means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, label='Isotropic Noise', color=c)
-    #     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-    # except IOError:
-    #     pass
+    # Isotropic noise
+    title = 'test_iso'
+    params['mode'] = 'iso'
+    ptype = 'sup_loss'
+    params_iso = params.copy()
+    params_iso['scale'] = 0.5
+    del params_iso['update']
+    c = next(color)
+    try:
+        means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
+        # plt.plot(iters, means, color=c, linestyle='--')
+        ptype = 'covariate_shifts'        
+        means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
+        means = abs(means)
+        plt.plot(iters, means, label='Isotropic Noise 0.5', color=c)
+        plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    except IOError:
+        pass
+
+    # Isotropic noise
+    title = 'test_iso'
+    params['mode'] = 'iso'
+    ptype = 'sup_loss'
+    params_iso = params.copy()
+    params_iso['scale'] = 2.0
+    del params_iso['update']
+    c = next(color)
+    try:
+        means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
+        # plt.plot(iters, means, color=c, linestyle='--')
+        ptype = 'covariate_shifts'
+        means, sems = utils.extract_data(params_iso, iters, title, sub_dir, ptype)
+        means = abs(means)
+        plt.plot(iters, means, label='Isotropic Noise 2.0', color=c)
+        plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    except IOError:
+        pass
 
 
 
-    # # DART
-    # partition = 450
-    # title = 'test_dart'
-    # ptype = 'sup_loss'
-    # params_dart = params.copy()
-    # params_dart['partition'] = partition
-    # c = next(color)
-    # try:
-    #     means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, color=c, linestyle='--')
-        
-    #     ptype = 'surr_loss'
-    #     means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, label='DART ' + str(partition), color=c)
-    #     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-    # except IOError:
-    #     pass
+    # DART
+    partition = 450
+    title = 'test_dart'
+    params['mode'] = 'dart'
+    ptype = 'sup_loss'
+    params_dart = params.copy()
+    params_dart['partition'] = partition
+    c = next(color)
+    try:
+        means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
+        # plt.plot(iters, means, color=c, linestyle='--')
+        ptype = 'covariate_shifts'        
+        means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
+        means = abs(means)
+        plt.plot(iters, means, label='DART ' + str(partition), color=c)
+        plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    except IOError:
+        pass
 
 
 
