@@ -25,6 +25,7 @@ def main():
     args['arch'] = [64, 64]
     args['lr'] = .01
     args['epochs'] = 100
+    args['mode'] = 'rand'
 
     TRIALS = framework.TRIALS
 
@@ -50,6 +51,11 @@ class Test(framework.Test):
             'sup_losses': [],
             'sim_errs': [],
             'data_used': [],
+            'biases': [],
+            'variances': [],
+            'biases_learner': [],
+            'variances_learner': [],
+            'covariate_shifts': []
         }
         trajs = []
 
@@ -85,6 +91,11 @@ class Test(framework.Test):
             results['surr_losses'].append(it_results['surr_loss_mean'])
             results['sup_losses'].append(it_results['sup_loss_mean'])
             results['sim_errs'].append(it_results['sim_err_mean'])
+            results['biases'].append(it_results['biases_mean'])
+            results['variances'].append(it_results['variances_mean'])
+            results['biases_learner'].append(it_results['biases_learner_mean'])
+            results['variances_learner'].append(it_results['variances_learner_mean'])
+            results['covariate_shifts'].append(it_results['covariate_shifts_mean'])
             results['data_used'].append(len(y))
 
 

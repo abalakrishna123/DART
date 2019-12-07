@@ -13,7 +13,7 @@ import scipy.stats
 from tools import statistics, utils
 import itertools
 marker = itertools.cycle((',', '+', '.', 'o', '*', 's')) 
-color = itertools.cycle(( "#FCB716", "#2D3956", "#A0B2D8", "#988ED5", "#F68B20", "#15d134"))
+color = itertools.cycle(( "#FCB716", "#2D3956", "#A0B2D8", "#988ED5", "#F68B20", "#15d134", "A50F0A"))
 
 
 
@@ -181,6 +181,25 @@ def main():
         ptype = 'variances'
         means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
         plt.plot(iters, means, label='DART ' + str(partition), color=c)
+        plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    except IOError:
+        pass
+
+
+
+    # MIXED
+    title = 'test_mixed'
+    params['mode'] = 'mixed'
+    ptype = 'biases'
+    params_mixed = params.copy()
+    c = next(color)
+    try:
+        means, sems = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
+        plt.plot(iters, means, color=c, linestyle='--')
+        
+        ptype = 'variances'
+        means, sems = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
+        plt.plot(iters, means, label='MIXED', color=c)
         plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
     except IOError:
         pass

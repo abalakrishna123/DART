@@ -50,7 +50,6 @@ class Test(framework.Test):
         return count
 
 
-    # TODO: update to learn noise which minimizes variance + covariate shift...?
     def update_noise(self, i, trajs):
 
         if i in self.params['update']:
@@ -81,6 +80,8 @@ class Test(framework.Test):
             'data_used': [],
             'biases': [],
             'variances': [],
+            'biases_learner': [],
+            'variances_learner': [],
             'covariate_shifts': []
         }
 
@@ -88,6 +89,7 @@ class Test(framework.Test):
         snapshots = []
         traj_snapshots = []
         self.optimized_data = 0
+        supervisors = []
 
         for i in range(self.params['iters'][-1]):
             print "\tIteration: " + str(i)
@@ -107,6 +109,7 @@ class Test(framework.Test):
             if ((i + 1) in self.params['iters']):
                 snapshots.append((self.lnr.X[:], self.lnr.y[:]))
                 traj_snapshots.append(self.optimized_data)
+                supervisors.append(self.sup)
 
         for j in range(len(snapshots)):
             X, y = snapshots[j]
@@ -114,7 +117,7 @@ class Test(framework.Test):
             self.lnr.X, self.lnr.y = X, y
             self.lnr.train(verbose=True)
             print "\nData from snapshot: " + str(self.params['iters'][j])
-            it_results = self.iteration_evaluation()
+            it_results = self.iteration_evaluation(dart_sup=supervisors[j])
             
             results['sup_rewards'].append(it_results['sup_reward_mean'])
             results['rewards'].append(it_results['reward_mean'])
@@ -123,6 +126,8 @@ class Test(framework.Test):
             results['sim_errs'].append(it_results['sim_err_mean'])
             results['biases'].append(it_results['biases_mean'])
             results['variances'].append(it_results['variances_mean'])
+            results['biases_learner'].append(it_results['biases_learner_mean'])
+            results['variances_learner'].append(it_results['variances_learner_mean'])
             results['covariate_shifts'].append(it_results['covariate_shifts_mean'])
             results['data_used'].append(len(y) + optimized_data)
             print "\nTrain data: " + str(len(y))

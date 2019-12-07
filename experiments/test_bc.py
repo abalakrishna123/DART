@@ -55,6 +55,8 @@ class Test(framework.Test):
             'data_used': [],
             'biases': [],
             'variances': [],
+            'biases_learner': [],
+            'variances_learner': [],
             'covariate_shifts': []
         }
 
@@ -83,6 +85,8 @@ class Test(framework.Test):
             results['sim_errs'].append(it_results['sim_err_mean'])
             results['biases'].append(it_results['biases_mean'])
             results['variances'].append(it_results['variances_mean'])
+            results['biases_learner'].append(it_results['biases_learner_mean'])
+            results['variances_learner'].append(it_results['variances_learner_mean'])
             results['covariate_shifts'].append(it_results['covariate_shifts_mean'])
             results['data_used'].append(len(y))
 

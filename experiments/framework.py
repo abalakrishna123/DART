@@ -77,7 +77,7 @@ class Test(object):
 
 
 
-    def iteration_evaluation(self):
+    def iteration_evaluation(self, dart_sup=None, dagger_beta=None, mixed_switch_idx=None):
         """
             Evaluate learner and supervisor given the current amount of data
             Supervisor is averaged over p trajectories
@@ -100,19 +100,23 @@ class Test(object):
         sim_errs = np.zeros(q)
         biases = np.zeros(q)
         variances = np.zeros(q)
+        biases_learner = np.zeros(q)
+        variances_learner = np.zeros(q)
         cov_shifts = np.zeros(q)
 
         for j in range(p):
             sup_rewards[j] = statistics.eval_rewards(self.env, self.sup, self.params['t'], 1)
         
         for j in range(q):
-            eval_results = self.evals()
+            eval_results = self.evals(dart_sup, dagger_beta, mixed_switch_idx)
             rewards[j] = eval_results['rewards']
             surr_losses[j] = eval_results['surr_losses']
             sup_losses[j] = eval_results['sup_losses']
             sim_errs[j] = eval_results['sim_errs'] 
             biases[j] = eval_results['biases']
             variances[j] = eval_results['variances']
+            biases_learner[j] = eval_results['biases_learner']
+            variances_learner[j] = eval_results['variances_learner']
             cov_shifts[j] = eval_results['covariate_shifts']
 
         it_results['sup_reward_mean'], it_results['sup_reward_std'] = np.mean(sup_rewards), np.std(sup_rewards)
@@ -122,6 +126,8 @@ class Test(object):
         it_results['sim_err_mean'], it_results['sim_err_std'] = np.mean(sim_errs), np.std(sim_errs)
         it_results['biases_mean'], it_results['biases_std'] = np.mean(biases), np.std(biases)
         it_results['variances_mean'], it_results['variances_std'] = np.mean(variances), np.std(variances)
+        it_results['biases_learner_mean'], it_results['biases_learner_std'] = np.mean(biases_learner), np.std(biases_learner)
+        it_results['variances_learner_mean'], it_results['variances_learner_std'] = np.mean(variances_learner), np.std(variances_learner)
         it_results['covariate_shifts_mean'], it_results['covariate_shifts_std'] = np.mean(cov_shifts), np.std(cov_shifts)
 
         print "\t\tSup reward: " + str(it_results['sup_reward_mean']) + " +/- " + str(it_results['sup_reward_std'])
@@ -131,14 +137,16 @@ class Test(object):
         print "\t\tSim err: " + str(it_results['sim_err_mean']) + " +/- " + str(it_results['sim_err_std'])
         print "\t\tBiases: " + str(it_results['biases_mean']) + " +/- " + str(it_results['biases_std'])
         print "\t\tVariances: " + str(it_results['variances_mean']) + " +/- " + str(it_results['variances_std'])
+        print "\t\tBiases Learner: " + str(it_results['biases_learner_mean']) + " +/- " + str(it_results['biases_learner_std'])
+        print "\t\tVariances Learner: " + str(it_results['variances_learner_mean']) + " +/- " + str(it_results['variances_learner_std'])
         print "\t\tCovariate Shifts: " + str(it_results['covariate_shifts_mean']) + " +/- " + str(it_results['covariate_shifts_std'])
         print "\t\tTrace: " + str(np.trace(self.sup.cov))
 
         return it_results
 
 
-
-    def evals(self):
+    # TODO: for bias, variance, covariate shift need current distribution generating parameter to understand during TRAINING performance
+    def evals(self, dart_sup, dagger_beta, mixed_switch_idx):
         """
             Evaluate on all metrics including 
             reward, loss, and simulated error of the supervisor
@@ -148,11 +156,13 @@ class Test(object):
         results['surr_losses'] = statistics.evaluate_lnr_cont(self.env, self.lnr, self.sup, self.params['t'], 1)
         results['sup_losses'] = statistics.evaluate_sup_cont(self.env, self.lnr, self.sup, self.params['t'], 1)
         results['sim_errs'] = statistics.evaluate_sim_err_cont(self.env, self.sup, self.params['t'], 1)
-
-        biases, variances = statistics.evaluate_bias_variance_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], 20)
+        biases, variances = statistics.evaluate_bias_variance_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], dart_sup, dagger_beta, mixed_switch_idx, 20)
+        biases_learner, variances_learner = statistics.evaluate_bias_variance_learner_cont(self.env, self.lnr, self.sup, self.params['t'], 20)
         results['biases'] = biases 
         results['variances'] = variances
-        results['covariate_shifts'] = statistics.evaluate_covariate_shift_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], 20)
+        results['biases_learner'] = biases_learner 
+        results['variances_learner'] = variances_learner
+        results['covariate_shifts'] = statistics.evaluate_covariate_shift_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], dart_sup, dagger_beta, mixed_switch_idx, 20)
         return results
 
 
@@ -183,6 +193,8 @@ class Test(object):
         self.data_used_all = np.zeros((TRIALS, m))
         self.biases = np.zeros((TRIALS, m)) 
         self.variances = np.zeros((TRIALS, m)) 
+        self.biases_learner = np.zeros((TRIALS, m)) 
+        self.variances_learner = np.zeros((TRIALS, m)) 
         self.covariate_shifts = np.zeros((TRIALS, m)) 
         self.total_times_all = np.zeros((TRIALS))
 
@@ -197,6 +209,8 @@ class Test(object):
             self.data_used_all[t, :] = results['data_used']
             self.biases[t, :] = results['biases']
             self.variances[t, :] = results['variances']
+            self.biases_learner[t, :] = results['biases_learner']
+            self.variances_learner[t, :] = results['variances_learner']
             self.covariate_shifts[t, :] = results['covariate_shifts']
             self.total_times_all[t] = results['total_time']
 
@@ -215,6 +229,8 @@ class Test(object):
         data_used_all = self.data_used_all[:t, :]
         biases_all = self.biases[:t, :]
         variances_all = self.variances[:t, :]
+        biases_learner_all = self.biases_learner[:t, :]
+        variances_learner_all = self.variances_learner[:t, :]
         covariate_shifts_all = self.covariate_shifts[:t, :]
         total_times_all = self.total_times_all[:t]
 
@@ -231,6 +247,8 @@ class Test(object):
             data_used = data_used_all[:, i]
             biases = biases_all[:, i]
             variances = variances_all[:, i]
+            biases_learner = biases_learner_all[:, i]
+            variances_learner = variances_learner_all[:, i]
             covariate_shifts = covariate_shifts_all[:, i]
             total_time = total_times_all[:]
             save_path = paths[iters[i]]
@@ -241,7 +259,9 @@ class Test(object):
             d = {'reward': rewards, 'surr_loss': surr_losses, 
                 'sup_reward': sup_rewards, 'sup_loss': sup_losses,
                 'sim_err': sim_errs, 'biases': biases,
-                'variances': variances, 'covariate_shifts': covariate_shifts,
+                'variances': variances, 'biases_learner': biases_learner,
+                'variances_learner': variances_learner, 
+                'covariate_shifts': covariate_shifts,
                 'data_used': data_used, 'total_time': total_time}
             df = pd.DataFrame(d)
             df.to_csv(save_path)
@@ -254,6 +274,8 @@ class Test(object):
             data_used_mean, data_used_sem = np.mean(data_used), scipy.stats.sem(data_used)
             biases_mean, biases_sem = np.mean(biases), scipy.stats.sem(biases)
             variances_mean, variances_sem = np.mean(variances), scipy.stats.sem(variances)
+            biases_learner_mean, biases_learner_sem = np.mean(biases_learner), scipy.stats.sem(biases_learner)
+            variances_learner_mean, variances_learner_sem = np.mean(variances_learner), scipy.stats.sem(variances_learner)
             covariate_shifts_mean, covariate_shifts_sem = np.mean(covariate_shifts), scipy.stats.sem(covariate_shifts)
             total_time_mean, total_time_sem = np.mean(total_time), scipy.stats.sem(total_time)
 
@@ -267,6 +289,8 @@ class Test(object):
             print "Data used: " + str(data_used_mean) + " +/- " + str(data_used_sem)
             print "Bias: " + str(biases_mean) + " +/- " + str(biases_sem)
             print "Variance: " + str(variances_mean) + " +/- " + str(variances_sem)
+            print "Bias Learner: " + str(biases_learner_mean) + " +/- " + str(biases_learner_sem)
+            print "Variance Learner: " + str(variances_learner_mean) + " +/- " + str(variances_learner_sem)
             print "Covariate Shift: " + str(covariate_shifts_mean) + " +/- " + str(covariate_shifts_sem)
             print "Total time: " + str(total_time_mean) + " +/- " + str(total_time_sem)
             print "\n\n\n"

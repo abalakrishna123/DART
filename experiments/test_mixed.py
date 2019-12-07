@@ -15,19 +15,18 @@ import time as timer
 import framework
 
 def main():
-    title = 'test_dagger'
+    title = 'test_mixed'
     ap = argparse.ArgumentParser()
     ap.add_argument('--envname', required=True)                         # OpenAI gym environment
     ap.add_argument('--t', required=True, type=int)                     # time horizon
     ap.add_argument('--iters', required=True, type=int, nargs='+')      # iterations to evaluate the learner on
-    ap.add_argument('--beta', required=True, type=float)                # beta term, see Ross et al.
     
     args = vars(ap.parse_args())
     # args['arch'] = [64, 64]
     args['arch'] = [64]
     args['lr'] = .01
     args['epochs'] = 100
-    args['mode'] = 'dagger'
+    args['mode'] = 'mixed'
 
     TRIALS = framework.TRIALS
 
@@ -65,10 +64,8 @@ class Test(framework.Test):
         
         trajs = []
 
-        beta = self.params['beta']
-
         snapshots = []
-        betas = []
+        switch_idxs = []
         for i in range(self.params['iters'][-1]):
             print "\tIteration: " + str(i)
 
@@ -80,25 +77,22 @@ class Test(framework.Test):
                 self.lnr.train()
 
             else:
-                states, _, _, _ = statistics.collect_traj_beta(self.env, self.sup, self.lnr, T, beta, False)
-                i_actions = [self.sup.intended_action(s) for s in states]
-                states, i_actions, _ = utils.filter_data(self.params, states, i_actions)
+                post_switch_states, post_switch_sup_actions, switch_idx, _ = statistics.collect_traj_mixed(self.env, self.sup, self.lnr, T, i, self.params['iters'][-1], False)
+                states, i_actions, _ = utils.filter_data(self.params, post_switch_states, post_switch_sup_actions)
                 self.lnr.add_data(states, i_actions)
                 self.lnr.train(verbose=True)
-                beta = beta * beta
 
 
             if ((i + 1) in self.params['iters']):
                 snapshots.append((self.lnr.X[:], self.lnr.y[:]))
-                betas.append(beta)
-
+                switch_idxs.append(switch_idx)
 
         for j in range(len(snapshots)):
             X, y = snapshots[j]
             self.lnr.X, self.lnr.y = X, y
             self.lnr.train(verbose=True)
             print "\nData from snapshot: " + str(self.params['iters'][j])
-            it_results = self.iteration_evaluation(dagger_beta=betas[j])
+            it_results = self.iteration_evaluation(mixed_switch_idx=switch_idxs[j])
             
             results['sup_rewards'].append(it_results['sup_reward_mean'])
             results['rewards'].append(it_results['reward_mean'])

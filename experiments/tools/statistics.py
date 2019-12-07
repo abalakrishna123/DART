@@ -21,16 +21,14 @@ def eval_agent_statistics_cont(env, agent, sup, T, num_samples=1):
     return stats(losses)
 
 
-def eval_bias_variance_cont(env, agent, sup, mode, T, num_samples=1):
+def eval_bias_variance_cont(env, agent, sup, mode, T, dart_sup, dagger_beta, mixed_switch_idx, num_samples=1):
     s = env.reset()
     biases = []
     variances = []
 
-    if mode== 'bc':
+    if mode in ['bc', 'iso', 'rand']:
         dist_gen = sup 
-    elif mode == 'dagger':
-        dist_gen = agent
-    else:
+    elif mode in ['dagger', 'dart', 'mixed']:
         dist_gen = None
 
     for i in range(num_samples):
@@ -48,7 +46,24 @@ def eval_bias_variance_cont(env, agent, sup, mode, T, num_samples=1):
             if dist_gen:
                 a_dist_gen = dist_gen.sample_action(s)
             else:
-                a_dist_gen = sup.sample_action(s)
+                if mode == 'dagger':
+                    if random.random() > dagger_beta:
+                        a_dist_gen = agent.sample_action(s)
+                    else:
+                        a_dist_gen = sup.sample_action(s)
+                elif mode == 'dart':
+                        a_dist_gen = dart_sup.sample_action(s)
+                elif mode == 'mixed':
+                    if t < mixed_switch_idx:
+                        a_dist_gen = agent.sample_action(s)
+                    else:
+                        a_dist_gen = sup.sample_action(s)
+                else:
+                    raise NotImplementedError("Unsupported Mode")
+
+
+                # a_dist_gen = sup.sample_action(s)
+
             next_s, r, done, _ = env.step(a_dist_gen) 
             s = next_s
             bias += np.sum((a - a_sup)**2)
@@ -65,17 +80,48 @@ def eval_bias_variance_cont(env, agent, sup, mode, T, num_samples=1):
             
     return stats(biases), stats(variances)
 
+def eval_bias_variance_learner_cont(env, agent, sup, T, num_samples=1):
+    s = env.reset()
+    biases = []
+    variances = []
 
-def eval_covariate_shift_cont(env, agent, sup, mode, T, num_samples=1):
+    for i in range(num_samples):
+        bias, variance, t = 0, 0, 0
+        while t < T:
+            a = agent.sample_action(s) # \E_D(\pi^D_\theta(s))
+            a_sup = sup.intended_action(s) # \pi^*(s)
+            # For variance, at each state sample actions from a random model and compare
+            # to that from expected model
+            a_ensemble_list = agent.intended_actions(s)
+            ensemble_idx = np.random.randint(len(a_ensemble_list))
+            a_ensemble = a_ensemble_list[ensemble_idx] # \pi^D_\theta(s)
+
+            # Need to evaluate bias/variance on learner's dist
+            next_s, r, done, _ = env.step(a) 
+            s = next_s
+            bias += np.sum((a - a_sup)**2)
+            variance += np.sum((a - a_ensemble)**2)
+            t += 1
+
+            if done == True:
+                break
+
+        bias /= float(t)
+        variance /= float(t)
+        biases.append(bias)
+        variances.append(variance)
+            
+    return stats(biases), stats(variances)
+
+
+def eval_covariate_shift_cont(env, agent, sup, mode, T, dart_sup, dagger_beta, mixed_switch_idx, num_samples=1):
     s = env.reset()
     learned_dist_losses = []
     dist_gen_param_losses = []
 
-    if mode== 'bc':
+    if mode in ['bc', 'iso', 'rand']:
         dist_gen = sup 
-    elif mode == 'dagger':
-        dist_gen = agent
-    else:
+    elif mode in ['dagger', 'dart', 'mixed']:
         dist_gen = None
 
     for i in range(num_samples):
@@ -101,10 +147,24 @@ def eval_covariate_shift_cont(env, agent, sup, mode, T, num_samples=1):
         while t < T:
             a = agent.sample_action(s)
             a_sup = sup.intended_action(s)
+            # Need to evaluate bias/variance on distribution generating parameter
             if dist_gen:
                 a_dist_gen = dist_gen.sample_action(s)
             else:
-                a_dist_gen = sup.sample_action(s)
+                if mode == 'dagger':
+                    if random.random() > dagger_beta:
+                        a_dist_gen = agent.sample_action(s)
+                    else:
+                        a_dist_gen = sup.sample_action(s)
+                elif mode == 'dart':
+                        a_dist_gen = dart_sup.sample_action(s)
+                elif mode == 'mixed':
+                    if t < mixed_switch_idx:
+                        a_dist_gen = agent.sample_action(s)
+                    else:
+                        a_dist_gen = sup.sample_action(s)
+                else:
+                    raise NotImplementedError("Unsupported Mode")
             # Evaluate losses on dist gen's distribution
             next_s, r, done, _ = env.step(a_dist_gen) 
             s = next_s
@@ -201,13 +261,17 @@ def evaluate_sim_err_cont(env, sup, T, num_samples = 1):
     stats = eval_sim_err_statistics_cont(env, sup, T, num_samples)
     return stats['mean']
 
-def evaluate_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples=1):
-    stats_bias, stats_variance = eval_bias_variance_cont(env, agent, sup, dist_gen, T, num_samples)
+def evaluate_bias_variance_cont(env, agent, sup, mode, T, dart_sup, dagger_beta, mixed_switch_idx, num_samples=1):
+    stats_bias, stats_variance = eval_bias_variance_cont(env, agent, sup, mode, T, dart_sup, dagger_beta, mixed_switch_idx, num_samples)
     return stats_bias['mean'], stats_variance['mean']
 
-def evaluate_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples=1):
-    stats = eval_covariate_shift_cont(env, agent, sup, dist_gen, T, num_samples)
+def evaluate_covariate_shift_cont(env, agent, sup, mode, T, dart_sup, dagger_beta, mixed_switch_idx, num_samples=1):
+    stats = eval_covariate_shift_cont(env, agent, sup, mode, T, dart_sup, dagger_beta, mixed_switch_idx, num_samples)
     return stats['mean']
+
+def evaluate_bias_variance_learner_cont(env, agent, sup, T, num_samples=1):
+    stats_bias, stats_variance = eval_bias_variance_learner_cont(env, agent, sup, T, num_samples)
+    return stats_bias['mean'], stats_variance['mean']
 
 
 def collect_traj(env, agent, T, visualize=False):
@@ -284,4 +348,41 @@ def collect_traj_beta(env, sup, lnr, T, beta, visualize=False):
      
     print "Beta: " + str(beta), "empirical beta: " + str(float(count) / (t + 1))       
     return states, intended_actions, taken_actions, reward
+
+def collect_traj_mixed(env, sup, lnr, T, i, max_iter, visualize=False):
+
+    states = []
+    taken_actions = []
+
+    s = env.reset()
+
+    switch_idx = int(T * (i + 1)/max_iter) # TODO: make this some function of i in the future, not necessarily this one...
+    print "Switch Idx: " + str(switch_idx)
+
+    reward = 0.0
+    for t in range(T):
+        if t < switch_idx:
+            a = lnr.sample_action(s)
+        else:
+            a = sup.sample_action(s)
+        
+        next_s, r, done, _ = env.step(a)
+        reward += r
+
+        states.append(s)
+        taken_actions.append(a)
+
+        s = next_s
+
+        if visualize:
+            env.render()
+
+
+        if done == True:
+            break
+
+    post_switch_states = states[switch_idx:]
+    post_switch_sup_actions = taken_actions[switch_idx:]
+          
+    return post_switch_states, post_switch_sup_actions, switch_idx, reward
 
