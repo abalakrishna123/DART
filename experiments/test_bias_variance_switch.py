@@ -15,19 +15,18 @@ import time as timer
 import framework
 
 def main():
-    title = 'test_mixed'
+    title = 'test_bias_variance_switch'
     ap = argparse.ArgumentParser()
     ap.add_argument('--envname', required=True)                         # OpenAI gym environment
     ap.add_argument('--t', required=True, type=int)                     # time horizon
     ap.add_argument('--iters', required=True, type=int, nargs='+')      # iterations to evaluate the learner on
-    ap.add_argument('--dagger_mixed', required=True, type=int)          # dagger mixed (should be 0 or 1)
     
     args = vars(ap.parse_args())
     # args['arch'] = [64, 64]
     args['arch'] = [64]
     args['lr'] = .01
     args['epochs'] = 100
-    args['mode'] = 'mixed'
+    args['mode'] = 'bias_variance_switch'
 
     TRIALS = framework.TRIALS
 
@@ -64,9 +63,10 @@ class Test(framework.Test):
         }
         
         trajs = []
-
         snapshots = []
-        switch_idxs = []
+        dist_gen_agents = []
+        learner_bias, learner_variance = None, None
+
         for i in range(self.params['iters'][-1]):
             print "\tIteration: " + str(i)
 
@@ -76,33 +76,39 @@ class Test(framework.Test):
                 states, i_actions, _ = utils.filter_data(self.params, states, i_actions)
                 self.lnr.add_data(states, i_actions)
                 self.lnr.train()
-
+                learner_last = False
+                dist_gen_agent = self.sup
             else:
-                post_switch_states, post_switch_sup_actions, pre_switch_states, switch_idx, _ = statistics.collect_traj_mixed(self.env, self.sup, self.lnr, T, i, self.params['iters'][-1], False)
-
-                if self.params['dagger_mixed']:
-                    i_actions_dagger = [self.sup.intended_action(s) for s in pre_switch_states]
-                    states = pre_switch_states + post_switch_states
-                    i_actions = i_actions_dagger + post_switch_sup_actions
+                # if was learner last time and variance > some quantity switch to supervisor
+                if learner_last and float(learner_variance)/(float(learner_bias) + float(learner_variance)) > 0.5: # TODO: can modify this threshold in various ways as see fit...
+                    states, i_actions, _, _ = statistics.collect_traj(self.env, self.sup, T, False)
+                    trajs.append((states, i_actions))
+                    states, i_actions, _ = utils.filter_data(self.params, states, i_actions)
+                    self.lnr.add_data(states, i_actions)
+                    self.lnr.train()
+                    learner_last = False
+                    dist_gen_agent = self.sup
                 else:
-                    states = post_switch_states
-                    i_actions = post_switch_sup_actions
-
-                states, i_actions, _ = utils.filter_data(self.params, states, i_actions)
-                self.lnr.add_data(states, i_actions)
-                self.lnr.train(verbose=True)
-
+                    states, _, _, _ = statistics.collect_traj(self.env, self.lnr, T, False)
+                    i_actions = [self.sup.intended_action(s) for s in states]
+                    states, i_actions, _ = utils.filter_data(self.params, states, i_actions)
+                    self.lnr.add_data(states, i_actions)
+                    self.lnr.train(verbose=True)
+                    learner_last = True
+                    learner_bias, learner_variance = statistics.evaluate_bias_variance_learner_cont(self.env, self.lnr, self.sup, T, num_samples=20)
+                    dist_gen_agent = self.lnr
 
             if ((i + 1) in self.params['iters']):
                 snapshots.append((self.lnr.X[:], self.lnr.y[:]))
-                switch_idxs.append(switch_idx)
+                dist_gen_agents.append(dist_gen_agent)
+
 
         for j in range(len(snapshots)):
             X, y = snapshots[j]
             self.lnr.X, self.lnr.y = X, y
             self.lnr.train(verbose=True)
             print "\nData from snapshot: " + str(self.params['iters'][j])
-            it_results = self.iteration_evaluation(mixed_switch_idx=switch_idxs[j])
+            it_results = self.iteration_evaluation(dist_gen_agent=dist_gen_agents[j])
             
             results['sup_rewards'].append(it_results['sup_reward_mean'])
             results['rewards'].append(it_results['reward_mean'])

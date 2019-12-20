@@ -50,13 +50,14 @@ def main():
 
     c = next(color)
 
-    means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, color=c, linestyle='--')
+    means_bias, sems_bias = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
+    plt.plot(iters, means_bias, color=c, linestyle='--')
 
     ptype = 'variances_learner'
-    means, sems = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, label='Behavior Cloning', color=c)
-    plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    means_variance, sems_variance = utils.extract_data(params_bc, iters, title, sub_dir, ptype)
+    plt.plot(iters, means_variance/means_bias, label='Behavior Cloning', color=c)
+
+    # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
 
 
     # DAgger
@@ -69,30 +70,13 @@ def main():
     del params_dagger['update']
     c = next(color)
 
-    means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, color=c, linestyle='--')
+    means_bias, sems_bias = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
+    plt.plot(iters, means_bias, color=c, linestyle='--')
 
     ptype = 'variances_learner'
-    means, sems = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, label='DAgger', color=c)
-    plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-
-
-    # Bias Variance Thresh
-    title = 'test_bias_variance_switch'
-    params['mode'] = 'bias_variance_switch'
-    ptype = 'biases_learner'
-    params_bias_variance_switch = params.copy()
-    del params_bias_variance_switch['update']
-    c = next(color)
-
-    means, sems = utils.extract_data(params_bias_variance_switch, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, color=c, linestyle='--')
-
-    ptype = 'variances_learner'
-    means, sems = utils.extract_data(params_bias_variance_switch, iters, title, sub_dir, ptype)
-    plt.plot(iters, means, label='Switch', color=c)
-    plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+    means_variance, sems_variance = utils.extract_data(params_dagger, iters, title, sub_dir, ptype)
+    plt.plot(iters, means_variance/means_bias, label='DAgger', color=c)
+    # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
 
 
     # # DAgger B
@@ -182,101 +166,101 @@ def main():
     params_dart['partition'] = partition
     c = next(color)
     try:
-        means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
-        plt.plot(iters, means, color=c, linestyle='--')
+        means_bias, sems_bias = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_bias, color=c, linestyle='--')
         
         ptype = 'variances_learner'
-        means, sems = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
-        plt.plot(iters, means, label='DART ' + str(partition), color=c)
-        plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
+        means_variance, sems_variance = utils.extract_data(params_dart, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_variance/means_bias, label='DART ' + str(partition), color=c)
+        # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
     except IOError:
         pass
 
 
 
-    # # DART
-    # partition = 450
-    # title = 'test_dart_min_var'
-    # params['mode'] = 'dart'
-    # ptype = 'biases_learner'
-    # params_dart_min_var = params.copy()
-    # params_dart_min_var['partition'] = partition
-    # params_dart_min_var['reg_penalty'] = 0.3
-    # c = next(color)
-    # try:
-    #     means, sems = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, color=c, linestyle='--')
+    # DART
+    partition = 450
+    title = 'test_dart_min_var'
+    params['mode'] = 'dart'
+    ptype = 'biases_learner'
+    params_dart_min_var = params.copy()
+    params_dart_min_var['partition'] = partition
+    params_dart_min_var['reg_penalty'] = 0.3
+    c = next(color)
+    try:
+        means_bias, sems_bias = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_bias, color=c, linestyle='--')
         
-    #     ptype = 'variances_learner'
-    #     means, sems = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, label='DART Reg 0.3 ' + str(partition), color=c)
-    #     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-    # except IOError:
-    #     pass
+        ptype = 'variances_learner'
+        means_variance, sems_variance = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_variance/means_bias, label='DART Reg 0.3 ' + str(partition), color=c)
+        # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
+    except IOError:
+        pass
 
 
 
-    # # DART
-    # partition = 450
-    # title = 'test_dart_min_var'
-    # params['mode'] = 'dart'
-    # ptype = 'biases_learner'
-    # params_dart_min_var = params.copy()
-    # params_dart_min_var['partition'] = partition
-    # params_dart_min_var['reg_penalty'] = 0.7
-    # c = next(color)
-    # try:
-    #     means, sems = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, color=c, linestyle='--')
+    # DART
+    partition = 450
+    title = 'test_dart_min_var'
+    params['mode'] = 'dart'
+    ptype = 'biases_learner'
+    params_dart_min_var = params.copy()
+    params_dart_min_var['partition'] = partition
+    params_dart_min_var['reg_penalty'] = 0.7
+    c = next(color)
+    try:
+        means_bias, sems_bias = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_bias, color=c, linestyle='--')
         
-    #     ptype = 'variances_learner'
-    #     means, sems = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, label='DART Reg 0.7 ' + str(partition), color=c)
-    #     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-    # except IOError:
-    #     pass
+        ptype = 'variances_learner'
+        means_variance, sems_variance = utils.extract_data(params_dart_min_var, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_variance/means_bias, label='DART Reg 0.7 ' + str(partition), color=c)
+        # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
+    except IOError:
+        pass
 
 
 
-    # # MIXED with Dagger mixed
-    # title = 'test_mixed'
-    # params['mode'] = 'mixed'
-    # ptype = 'biases_learner'
-    # params_mixed = params.copy()
-    # params_mixed['dagger_mixed'] = 1
-    # del params_mixed['update']
-    # c = next(color)
-    # try:
-    #     means, sems = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, color=c, linestyle='--')
+    # MIXED with Dagger mixed
+    title = 'test_mixed'
+    params['mode'] = 'mixed'
+    ptype = 'biases_learner'
+    params_mixed = params.copy()
+    params_mixed['dagger_mixed'] = 1
+    del params_mixed['update']
+    c = next(color)
+    try:
+        means_bias, sems_bias = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_bias, color=c, linestyle='--')
         
-    #     ptype = 'variances_learner'
-    #     means, sems = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, label='MIXED DAgger', color=c)
-    #     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-    # except IOError:
-    #     pass
+        ptype = 'variances_learner'
+        means_variance, sems_variance = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_variance/means_bias, label='MIXED DAgger', color=c)
+        # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
+    except IOError:
+        pass
 
 
 
-    # # MIXED without Dagger mixed
-    # title = 'test_mixed'
-    # params['mode'] = 'mixed'
-    # ptype = 'biases_learner'
-    # params_mixed = params.copy()
-    # params_mixed['dagger_mixed'] = 0
-    # del params_mixed['update']
-    # c = next(color)
-    # try:
-    #     means, sems = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, color=c, linestyle='--')
+    # MIXED without Dagger mixed
+    title = 'test_mixed'
+    params['mode'] = 'mixed'
+    ptype = 'biases_learner'
+    params_mixed = params.copy()
+    params_mixed['dagger_mixed'] = 0
+    del params_mixed['update']
+    c = next(color)
+    try:
+        means_bias, sems_bias = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_bias, color=c, linestyle='--')
         
-    #     ptype = 'variances_learner'
-    #     means, sems = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
-    #     plt.plot(iters, means, label='MIXED', color=c)
-    #     plt.fill_between(iters, (means - sems), (means + sems), alpha=.3, color=c)
-    # except IOError:
-    #     pass
+        ptype = 'variances_learner'
+        means_variance, sems_variance = utils.extract_data(params_mixed, iters, title, sub_dir, ptype)
+        plt.plot(iters, means_variance/means_bias, label='MIXED', color=c)
+        # plt.fill_between(iters, (means_variance - sems_variance), (means_variance + sems_variance), alpha=.3, color=c)
+    except IOError:
+        pass
 
 
 
@@ -290,7 +274,7 @@ def main():
         os.makedirs(save_path)
 
     if should_save == True:
-        plt.savefig(save_path + str(params['envname']) + "_bias_variance_learner.pdf")
+        plt.savefig(save_path + str(params['envname']) + "_bias_variance_learner_ratio.pdf")
     else:
         plt.show()
 

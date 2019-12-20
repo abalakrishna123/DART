@@ -32,7 +32,7 @@ def sample_covariance_sup(env, lnr, sup, samples, T):
     return cov / float(samples)
 
 
-def sample_covariance_trajs(env, lnr, trajs, samples, T):
+def sample_covariance_trajs(env, lnr, trajs, samples, T): # TODO: Understand... this clearly implements (3) but where is (4) implemented?
     d = env.action_space.shape[0]
     cov = np.zeros((d, d))
     trajs = np.array(trajs[len(trajs) - samples:])

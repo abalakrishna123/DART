@@ -77,7 +77,7 @@ class Test(object):
 
 
 
-    def iteration_evaluation(self, dart_sup=None, dagger_beta=None, mixed_switch_idx=None):
+    def iteration_evaluation(self, dart_sup=None, dagger_beta=None, mixed_switch_idx=None, dist_gen_agent=None):
         """
             Evaluate learner and supervisor given the current amount of data
             Supervisor is averaged over p trajectories
@@ -108,7 +108,7 @@ class Test(object):
             sup_rewards[j] = statistics.eval_rewards(self.env, self.sup, self.params['t'], 1)
         
         for j in range(q):
-            eval_results = self.evals(dart_sup, dagger_beta, mixed_switch_idx)
+            eval_results = self.evals(dart_sup, dagger_beta, mixed_switch_idx, dist_gen_agent)
             rewards[j] = eval_results['rewards']
             surr_losses[j] = eval_results['surr_losses']
             sup_losses[j] = eval_results['sup_losses']
@@ -146,7 +146,7 @@ class Test(object):
 
 
     # TODO: for bias, variance, covariate shift need current distribution generating parameter to understand during TRAINING performance
-    def evals(self, dart_sup, dagger_beta, mixed_switch_idx):
+    def evals(self, dart_sup, dagger_beta, mixed_switch_idx, dist_gen_agent):
         """
             Evaluate on all metrics including 
             reward, loss, and simulated error of the supervisor
@@ -156,13 +156,13 @@ class Test(object):
         results['surr_losses'] = statistics.evaluate_lnr_cont(self.env, self.lnr, self.sup, self.params['t'], 1)
         results['sup_losses'] = statistics.evaluate_sup_cont(self.env, self.lnr, self.sup, self.params['t'], 1)
         results['sim_errs'] = statistics.evaluate_sim_err_cont(self.env, self.sup, self.params['t'], 1)
-        biases, variances = statistics.evaluate_bias_variance_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], dart_sup, dagger_beta, mixed_switch_idx, 20)
+        biases, variances = statistics.evaluate_bias_variance_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], dart_sup, dagger_beta, mixed_switch_idx, dist_gen_agent, 20)
         biases_learner, variances_learner = statistics.evaluate_bias_variance_learner_cont(self.env, self.lnr, self.sup, self.params['t'], 20)
         results['biases'] = biases 
         results['variances'] = variances
         results['biases_learner'] = biases_learner 
         results['variances_learner'] = variances_learner
-        results['covariate_shifts'] = statistics.evaluate_covariate_shift_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], dart_sup, dagger_beta, mixed_switch_idx, 20)
+        results['covariate_shifts'] = statistics.evaluate_covariate_shift_cont(self.env, self.lnr, self.sup, self.params['mode'], self.params['t'], dart_sup, dagger_beta, mixed_switch_idx, dist_gen_agent, 20)
         return results
 
 
